@@ -1,7 +1,7 @@
 from deep_translator import GoogleTranslator
 import ruamel.yaml
 
-API_KEY = 'AIzaSyA0yGreNL1-hu2ibAstkKjqykSqWGS5C_8'
+API_KEY = 'VOTRE CLE API GOOGLE'
 
 
 def translate_text(text):
