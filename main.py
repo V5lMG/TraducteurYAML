@@ -1,64 +1,106 @@
-from deep_translator import GoogleTranslator
-import ruamel.yaml
+"""Point d'entrée du traducteur YAML autonome (V2).
 
-API_KEY = 'VOTRE CLE API GOOGLE'
+Auteur  : ValMG
+Version : 2.0.0
+"""
 
+__author__ = "ValMG"
+__version__ = "2.0.0"
 
-def translate_text(text):
-    try:
-        # Utilisation des traductions spécifiques pour certains mots
-        translations = {
-            'kingdom': 'royaume',
-            'ranks': 'rangs',
-            'powercell': 'cellule d\'énergie',
-            'extractor': 'extracteur',
-            'outpost': 'avant-poste',
-            'warp pad': 'plaque de téléportation',
-            'regulator': 'Optimisateur',
-            'siege cannon': 'Canon de siège',
-            'node': 'nom brut',
-            'audit logs': 'événements'
-        }
-        if text.strip() in translations:
-            return translations[text.strip()]
-        else:
-            translation = GoogleTranslator(source='en', target='fr').translate(text)
-            return translation
-    except Exception as e:
-        raise Exception(f"Erreur lors de la traduction du texte : {text}\nErreur : {e}")
+import argparse
+import os
+import sys
+import time
+from translator import OfflineTranslator
+from yaml_processor import YamlProcessor
 
 
-def translate_yaml(input_file, output_file):
-    with open(input_file, 'r', encoding='utf-8') as f_in, open(output_file, 'w', encoding='utf-8') as f_out:
-        yaml = ruamel.yaml.YAML(typ='safe')
-        yaml.default_flow_style = False
+def parse_arguments() -> argparse.Namespace:
+    """Analyse les arguments passés en ligne de commande."""
+    script_dir = os.path.dirname(os.path.abspath(__file__))
 
-        for line in f_in:
-            translated_line = line
+    parser = argparse.ArgumentParser(
+        description=f"Traducteur YAML autonome v{__version__} par {__author__} (100% hors-ligne, sans API Google)."
+    )
+    parser.add_argument(
+        "-i", "--input",
+        default=os.path.join(script_dir, "en.yml"),
+        help="Chemin du fichier YAML source (défaut: en.yml)"
+    )
+    parser.add_argument(
+        "-o", "--output",
+        default=os.path.join(script_dir, "fr.yml"),
+        help="Chemin du fichier YAML de sortie (défaut: fr.yml)"
+    )
+    parser.add_argument(
+        "-d", "--dict",
+        default=os.path.join(script_dir, "dictionary.json"),
+        help="Chemin du glossaire JSON prioritaire (défaut: dictionary.json)"
+    )
+    parser.add_argument(
+        "--dict-dir",
+        default=os.path.join(script_dir, "dictionaries"),
+        help="Dossier contenant tous les dictionnaires à charger (.json, .csv, .tsv, .txt, .tei)"
+    )
+    parser.add_argument(
+        "--from-lang",
+        default="en",
+        help="Code langue source (défaut: en)"
+    )
+    parser.add_argument(
+        "--to-lang",
+        default="fr",
+        help="Code langue cible (défaut: fr)"
+    )
+    return parser.parse_args()
 
-            # Vérifier si la ligne est un commentaire (commence par "#")
-            if line.startswith("#"):
-                translated_line = line  # Laisser la ligne inchangée
-            elif ':' in line:
-                key, value = line.split(':', 1)
-                try:
-                    translated_value = translate_text(value.strip())
-                    if translated_value == value.strip():
-                        # Réécrire la ligne si la traduction est identique au texte original
-                        translated_line = line
-                    else:
-                        translated_line = f'{key}: {translated_value}\n'
-                except Exception as e:
-                    print(f"Erreur lors de la traduction de la ligne : {line}")
-                    print(f"Erreur : {e}")
-                    continue
 
-            f_out.write(translated_line)
+def main():
+    args = parse_arguments()
 
-    print("Traduction terminée !")
+    if not os.path.exists(args.input):
+        print(f"[Erreur] Le fichier d'entrée '{args.input}' est introuvable.")
+        sys.exit(1)
+
+    print("=" * 60)
+    print(f"Traducteur YAML v{__version__} - par {__author__}")
+    print("Mode : 100% Hors-ligne / Multi-dictionnaires + IA locale")
+    print(f"Fichier source : {args.input}")
+    print(f"Fichier cible  : {args.output}")
+    print(f"Dossier dicos  : {args.dict_dir}")
+    print(f"Dico priorité  : {args.dict}")
+    print("=" * 60)
+
+    # 1. Initialisation du traducteur
+    start_time = time.time()
+    translator = OfflineTranslator(
+        dictionary_path=args.dict,
+        dictionaries_dir=args.dict_dir,
+        from_lang=args.from_lang,
+        to_lang=args.to_lang
+    )
+
+    # 2. Gestion du fichier YAML
+    processor = YamlProcessor(translate_fn=translator.translate)
+
+    last_pct = -1
+
+    def progress(current: int, total: int):
+        nonlocal last_pct
+        pct = int((current / total) * 100) if total > 0 else 100
+        if pct != last_pct and pct % 5 == 0:
+            last_pct = pct
+            print(f"Progression : {pct}% ({current}/{total} entrées)")
+
+    print("\nDébut du traitement...")
+    processor.process_file(args.input, args.output, on_progress=progress)
+
+    elapsed = time.time() - start_time
+    print("\n" + "=" * 60)
+    print(f"Traduction terminée avec succès en {elapsed:.1f} secondes !")
+    print(f"Fichier enregistré sous : {args.output}")
+    print("=" * 60)
 
 
-input_file = 'en.yml'
-output_file = 'fr.yml'
-
-translate_yaml(input_file, output_file)
+if __name__ == "__main__":
+    main()

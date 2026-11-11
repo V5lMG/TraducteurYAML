@@ -1,0 +1,2 @@
+ruamel.yaml>=0.18.0
+argostranslate>=1.11.0

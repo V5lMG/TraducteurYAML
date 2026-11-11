@@ -1,0 +1,36 @@
+# ==============================================================================
+# Configuration d'exemple du plugin (Anglais source)
+# ==============================================================================
+
+# Paramètres généraux
+plugin:
+  enabled: true
+  debug-mode: false
+  max-members: 50
+  daily-tax: 150.5
+  prefix: '&6[&lKingdoms&6] &2'
+
+# Identifiants techniques (ne doivent pas être traduits)
+effects:
+  join-sound: BLOCK_NOTE_BLOCK_BELL
+  teleport-sound: ENTITY_EXPERIENCE_ORB_PICKUP
+
+# Messages avec codes couleur, variables et placeholders
+messages:
+  welcome: '{$p}Welcome to the kingdom, {$s}%player%{$p}!'
+  unclaimed-land: '{$e}A total of {$es}%blocks% {$e}blocks were excluded since they are in unclaimed land.'
+  view-logs: "{$e}You don't have permission to view audit logs."
+  cannon-fire: '{$p}The siege cannon is loaded and ready to fire at %target%!'
+  warp-purchase: '{$p}You purchased a warp pad for {$s}%cost% {$p}resource points.'
+  outpost-warning: '{$e}You cannot place an outpost inside an enemy kingdom.'
+
+# Boutons et commandes interactives au survol
+gui:
+  invites: '{$p}You have {$s}%invites% {$p}invites. Click hover:{/k invites;&9Click to open;/k invites}'
+  cancel-prompt: '{$s}Type hover:{/cancel;&cClick to cancel;/cancel} {$s}to abort the action.'
+
+# Annonces et blocs multilignes (préservés avec le pipe |)
+announcements:
+  daily-reminder: |
+    &4&l&nAttention{$sep}: {$e}&lDaily tax checks will be performed in{$sep}: {$es}%time%
+    {$e}If your kingdom does not have enough funds, it will be disbanded.
